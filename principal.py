@@ -1,73 +1,101 @@
 import asyncio
+import json
 import threading
+from turtle import clear
 import requests
-
-def get_response(response):
-    res = response.get('results')
-    print(res, '\n')
+import mysql.connector
 
 
-def get_error():
-    print("Respuesta erronea")
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="programacion_Acti",
+    password="Percucionista13.",
+    database="concurrente"
+)
+
+mycursor = mydb.cursor()
 
 
-def insert_txt(gender, name, location):
-    f = open('Proyecto-Corte2/salida_info.txt', 'w')
+async def insertar_gender(genter):
+    sql = "INSERT INTO gender (idgender,gender) VALUES (%s,%s)"
+    val = ('0', genter)
+    mycursor.execute(sql, val)
+    mydb.commit()
+    if (mycursor.rowcount > 0):
+        print('Gender guardado con exito')
+
+
+async def insertar_name(name):
+    sql = "INSERT INTO name (title, first, last) VALUES (%s, %s ,%s)"
+    val = (name.get('title'), name.get('first'), name.get('last'))
+    mycursor.execute(sql, val)
+    mydb.commit()
+    if (mycursor.rowcount > 0):
+        print('Name guardado con exito')
+
+
+async def insertar_location(location):
+    sql = "INSERT INTO location (street_number,street_name,city,state,country,postcode,coordinates_latitud,coordinates_longitud,timezone_offset,timezone_description) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+    val = (location.get('street').get('number'), location.get('street').get('name'), location.get('city'), location.get('state'), location.get('country'),
+           location.get('postcode'), location.get('coordinates').get('latitude'), location.get('coordinates').get('longitude'), location.get('timezone').get('offset'), location.get('timezone').get('description'))
+    mycursor.execute(sql, val)
+    mydb.commit()
+    if (mycursor.rowcount > 0):
+        print('location guardado con exito')
+
+
+async def insert_txt(gender, name, location):
+    f = open('salida_info.txt', 'w')
+    f.write("genter: ")
     f.write(gender)
-    f.write(name)
-    f.write(location)
+    f.write("\nname: ")
+    f.write(json.dumps(name))
+    f.write("\nlocation: ")
+    f.write(json.dumps(location))
     f.close
+    print('Datos guardados en txt correctamente')
+
+async def insert_Db(gender, name, location):
+
+    await insertar_gender(gender)
+    await insertar_name(name)
+    await insertar_location(location)
 
 
-def insert_Db(gender, name, location):
-    pass
-
-
-async def solicitud(url, success_callback, error_callback):
+async def solicitud(url):
     print('Inicia metodo')
-    resultado = await metodo(url, success_callback, error_callback)
+
+    resultado = await metodo(url)
 
     gender = resultado.get('results')[0].get('gender')
     name = resultado.get('results')[0].get('name')
     location = resultado.get('results')[0].get('location')
 
-    threading.Thread(target=insert_txt, kwargs={
-        "gender": gender,
-        "name": name,
-        "location": location
-    }).start()
-
-    threading.Thread(target=insert_Db, kwargs={
-        "gender": gender,
-        "name": name,
-        "location": location
-    }).start()
-
-    return True
+    await insert_txt(gender, name, location)
+    await insert_Db(gender, name, location)
 
 
-async def metodo(url, success_callback, error_callback):
+async def metodo(url):
     res = requests.get(url)
     if res.status_code == 200:
-        success_callback(res.json())
+        print("Solicitud correcta")
     else:
-        error_callback()
+        print("Solicitud incorrecta")
     return res.json()
 
 
-async def servicio(url, success_callback, error_callback):
-    event = asyncio.get_event_loop()
+def servicio(url):
+    event = asyncio.new_event_loop()
+    asyncio.set_event_loop(event)
     try:
-        value = event.run_until_complete(
-            solicitud(url, success_callback, error_callback))
-        print('El retorno es ', value)
+        event.run_until_complete(solicitud(url))
 
     finally:
+
         event.close()
+
 
 if __name__ == '__main__':
     threading.Thread(target=servicio, kwargs={
         "url": "https://randomuser.me/api/",
-        "success_callback": get_response, 
-        "error_callback": get_error,
     }).start()
