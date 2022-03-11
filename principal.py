@@ -45,8 +45,8 @@ async def insertar_location(location):
 
 
 async def insert_txt(gender, name, location):
-    f = open('salida_info.txt', 'w')
-    f.write("genter: ")
+    f = open('salida_info.txt', 'a')
+    f.write("\ngenter: ")
     f.write(gender)
     f.write("\nname: ")
     f.write(json.dumps(name))
@@ -63,17 +63,17 @@ async def insert_Db(gender, name, location):
 
 
 async def solicitud(url):
-    print('Inicia metodo')
+    print('Inicia metodo de solicitudes')
+    for i in range(200):
+        print('Iniciando solicitud: ',i+1)
+        resultado = await metodo(url)
 
-    resultado = await metodo(url)
-
-    gender = resultado.get('results')[0].get('gender')
-    name = resultado.get('results')[0].get('name')
-    location = resultado.get('results')[0].get('location')
-
-    await insert_txt(gender, name, location)
-    await insert_Db(gender, name, location)
-
+        gender = resultado.get('results')[0].get('gender')
+        name = resultado.get('results')[0].get('name')
+        location = resultado.get('results')[0].get('location')
+        await insert_txt(gender, name, location)
+        await insert_Db(gender, name, location)
+        print('Solicitud ',i+1,'finalizada')
 
 async def metodo(url):
     res = requests.get(url)
