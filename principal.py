@@ -1,7 +1,6 @@
 import asyncio
 import json
 import threading
-from turtle import clear
 import requests
 import mysql.connector
 
@@ -55,6 +54,7 @@ async def insert_txt(gender, name, location):
     f.close
     print('Datos guardados en txt correctamente')
 
+
 async def insert_Db(gender, name, location):
 
     await insertar_gender(gender)
@@ -65,7 +65,7 @@ async def insert_Db(gender, name, location):
 async def solicitud(url):
     print('Inicia metodo de solicitudes')
     for i in range(200):
-        print('Iniciando solicitud: ',i+1)
+        print('Iniciando solicitud: ', i+1)
         resultado = await metodo(url)
 
         gender = resultado.get('results')[0].get('gender')
@@ -73,7 +73,8 @@ async def solicitud(url):
         location = resultado.get('results')[0].get('location')
         await insert_txt(gender, name, location)
         await insert_Db(gender, name, location)
-        print('Solicitud ',i+1,'finalizada')
+        print('Solicitud ', i+1, 'finalizada')
+
 
 async def metodo(url):
     res = requests.get(url)
